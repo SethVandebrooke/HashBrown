@@ -39,7 +39,8 @@ func MD5Sum(message []byte) []byte {
 
 	lengthInBits := uint64(len(message) * 8) // b from rfc1321
 	paddingMult := lengthInBits / 512
-	wordByteSize := 4
+	wordByteSize := 4   // number of bytes in 32-bit word
+	blockWordSize := 16 // number of  32-bit words in a block
 	// It's convenient to have padding length in bytes
 	paddingLength := (lengthInBits - ((paddingMult + 1) * 512) - 64) / 8
 	for index := uint64(0); index < paddingLength; index++ {
@@ -63,13 +64,13 @@ func MD5Sum(message []byte) []byte {
 	}
 
 	// for each 16 word block in the message (should be 512 bits)
-	for i := 0; i < N/16; i++ {
+	for i := 0; i < N/blockWordSize; i++ {
 		// Get a slice of the block. Go slices are just views into the underlying
 		// array storage, and thus this saves us a copy.
-		blockAddress := i * 16 * 4
-		block := message[blockAddress : blockAddress+16*4]
+		blockAddress := i * blockWordSize * wordByteSize
+		block := message[blockAddress : blockAddress+blockWordSize*wordByteSize]
 		// Turn the block from an slice of bytes into a slice of words
-		X := make([]uint32, 16)
+		X := make([]uint32, blockWordSize)
 		binary.Read(bytes.NewReader(block), binary.LittleEndian, &X)
 		AA := A
 		BB := B
